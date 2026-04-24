@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — GameVault</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎮</span> GameVault
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Forum</a>
+        <a href="/admin" class="nav-link active">Admin Panel</a>
+      </div>
+      <div class="nav-user">
+        <span class="nav-username" id="nav-username"></span>
+        <span class="badge-admin">Admin</span>
+        <form method="POST" action="/logout" style="margin:0">
+          <button type="submit" class="btn btn-logout">Sign Out</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Admin Panel</h1>
+      <a href="/" class="btn btn-secondary">← Back to Forum</a>
+    </div>
+
+    <div class="admin-layout">
+      <!-- Sidebar navigation -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">Management</div>
+        <a class="admin-nav-item active" data-section="overview">📊 Overview</a>
+        <a class="admin-nav-item" data-section="users">👥 Users</a>
+        <a class="admin-nav-item" data-section="categories">📂 Categories</a>
+      </aside>
+
+      <div class="admin-content">
+        <!-- Overview section -->
+        <section class="admin-section active" id="section-overview">
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="stat-users">—</div><div class="stat-label">Users</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-threads">—</div><div class="stat-label">Threads</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-posts">—</div><div class="stat-label">Posts</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-categories">—</div><div class="stat-label">Categories</div></div>
+          </div>
+        </section>
+
+        <!-- Users section -->
+        <section class="admin-section" id="section-users">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Categories section -->
+        <section class="admin-section" id="section-categories">
+          <div class="section-card">
+            <h2>Add Category</h2>
+            <form id="add-category-form" style="display:flex;flex-direction:column;gap:0.75rem">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                <div class="form-group">
+                  <label for="cat-name">Name</label>
+                  <input type="text" id="cat-name" placeholder="Category name" required>
+                </div>
+                <div class="form-group">
+                  <label for="cat-slug">Slug</label>
+                  <input type="text" id="cat-slug" placeholder="url-friendly-slug" required>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:80px 1fr;gap:0.75rem">
+                <div class="form-group">
+                  <label for="cat-icon">Icon</label>
+                  <input type="text" id="cat-icon" placeholder="🎮" maxlength="4">
+                </div>
+                <div class="form-group">
+                  <label for="cat-desc">Description</label>
+                  <input type="text" id="cat-desc" placeholder="Short description" required>
+                </div>
+              </div>
+              <div id="cat-form-error"></div>
+              <button type="submit" class="btn btn-primary" style="align-self:flex-start">Add Category</button>
+            </form>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Icon</th>
+                  <th>Name</th>
+                  <th>Slug</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categories-tbody">
+                <tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

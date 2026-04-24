@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — GameVault</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">🎮</div>
+      <h1>GameVault</h1>
+      <p>Create your account</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <form class="auth-form" method="POST" action="/register">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="3–30 characters, letters/numbers/_"
+          autocomplete="username"
+          minlength="3"
+          maxlength="30"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Minimum 8 characters"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password">Confirm password</label>
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          placeholder="Repeat your password"
+          autocomplete="new-password"
+          minlength="8"
+          required
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.7rem;">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Sign in</a>
+    </div>
+  </div>
+
+  <script>
+    const ERRORS = {
+      missing:         'Please fill in all fields.',
+      username_length: 'Username must be between 3 and 30 characters.',
+      username_chars:  'Username may only contain letters, numbers and underscores.',
+      weak_password:   'Password must be at least 8 characters long.',
+      mismatch:        'Passwords do not match.',
+      taken:           'That username or email is already registered.',
+      server:          'Something went wrong. Please try again later.',
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const errKey = params.get('error');
+    if (errKey) {
+      const msg = ERRORS[errKey] || 'An error occurred. Please try again.';
+      const div = document.createElement('div');
+      div.className = 'alert alert-error';
+      div.textContent = msg;
+      document.getElementById('alert-box').appendChild(div);
+    }
+  </script>
+</body>
+</html>

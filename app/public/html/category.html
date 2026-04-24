@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category — GameVault</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎮</span> GameVault
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Forum</a>
+      </div>
+      <div class="nav-user">
+        <span class="nav-username" id="nav-username"></span>
+        <span class="badge-admin" id="nav-admin-badge" style="display:none">Admin</span>
+        <a href="/admin" class="btn btn-ghost btn-sm" id="nav-admin-link" style="display:none">Admin Panel</a>
+        <form method="POST" action="/logout" style="margin:0">
+          <button type="submit" class="btn btn-logout">Sign Out</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page">
+    <nav class="breadcrumb" id="breadcrumb">
+      <a href="/">Forum</a>
+      <span class="sep">›</span>
+      <span id="breadcrumb-cat">Loading…</span>
+    </nav>
+
+    <div class="page-header">
+      <h1 class="page-title" id="page-title">Loading…</h1>
+      <button class="btn btn-primary" id="new-thread-btn">+ New Thread</button>
+    </div>
+
+    <div id="threads-container">
+      <div class="spinner">Loading threads…</div>
+    </div>
+  </main>
+
+  <!-- New thread modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Start a New Thread</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form class="modal-form" id="new-thread-form">
+        <div class="form-group">
+          <label for="thread-title">Title</label>
+          <input type="text" id="thread-title" placeholder="What's your topic?" maxlength="255" required>
+        </div>
+        <div class="form-group">
+          <label for="thread-content">Opening post</label>
+          <textarea id="thread-content" placeholder="Share your thoughts…" rows="6" required></textarea>
+        </div>
+        <div id="thread-form-error"></div>
+        <button type="submit" class="btn btn-primary">Post Thread</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/category.js"></script>
+</body>
+</html>

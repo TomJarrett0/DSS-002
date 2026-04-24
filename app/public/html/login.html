@@ -1,29 +1,66 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title> Foodies 'R' Us Blog Login</title>
-        <meta charset="utf-8">
-        <link rel="icon" type="image/x-icon" href="../imgs/foodie.ico">
-        <link rel="stylesheet" href="../css/style.css">
-        <script src="../js/login.js" defer></script>
-    </head>
-    <body>
-        <header>
-            <a href="../html/index.html"><img id="logo" src="../imgs/logo.png"></a>
-            <h1>Welcome to Foodies 'R' Us!</h1>
-        </header>
-        <main>
-        <p>Please enter your username and password to continue.</p>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — GameVault</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-mark">🎮</div>
+      <h1>GameVault</h1>
+      <p>Sign in to join the discussion</p>
+    </div>
 
-        <form method="post" action="/" id="login_form">
-            <label for="username_input">Username:</label>
-            <input type="text" id="username_input" name="username_input" placeholder="Please enter your username...">
+    <div id="alert-box"></div>
 
-            <label for="password_input">Password:</label>
-            <input type="password" id="password_input" name="password_input" placeholder="Please enter your password...">
+    <form class="auth-form" method="POST" action="/login">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Enter your username"
+          autocomplete="username"
+          required
+        >
+      </div>
 
-            <button id="login_btn" type="submit">Log in</button>
-        </form>
-        </main>
-    </body>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.7rem;">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="/register">Create one</a>
+    </div>
+  </div>
+
+  <script>
+    // Show generic error from query param — same message regardless of cause
+    // to prevent username enumeration attacks.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const div = document.createElement('div');
+      div.className = 'alert alert-error';
+      div.textContent = 'Invalid username or password. Please try again.';
+      document.getElementById('alert-box').appendChild(div);
+    }
+  </script>
+</body>
 </html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameVault — Forum</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎮</span> GameVault
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link active">Forum</a>
+      </div>
+      <div class="nav-user">
+        <span class="nav-username" id="nav-username"></span>
+        <span class="badge-admin" id="nav-admin-badge" style="display:none">Admin</span>
+        <a href="/admin" class="btn btn-ghost btn-sm" id="nav-admin-link" style="display:none">Admin Panel</a>
+        <form method="POST" action="/logout" style="margin:0">
+          <button type="submit" class="btn btn-logout">Sign Out</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">Forum Categories</h1>
+    </div>
+
+    <div id="categories-container">
+      <div class="spinner">Loading categories…</div>
+    </div>
+  </main>
+
+  <script src="/js/forum.js"></script>
+</body>
+</html>
