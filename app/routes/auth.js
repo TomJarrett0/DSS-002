@@ -95,6 +95,10 @@ router.post('/register', redirectIfLoggedIn, async (req, res) => {
     return res.redirect('/register?error=username_chars');
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    return res.redirect('/register?error=invalid_email');
+  }
+
   if (password.length < 8) {
     return res.redirect('/register?error=weak_password');
   }

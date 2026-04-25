@@ -5,84 +5,230 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register — GameVault</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body.register-page {
+      background: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .login-shell {
+      display: grid;
+      grid-template-columns: 460px 460px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 920px;
+    }
+
+    /* ── Left panel: form ── */
+    .login-form-panel {
+      background: #242424;
+      padding: 3rem 2.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .login-form-panel h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.5px;
+    }
+
+    .login-form-panel .subtitle {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    .login-form-panel .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .login-form-panel label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #ccc;
+      letter-spacing: 0.2px;
+    }
+
+    .login-form-panel input {
+      background: #1a1a1a;
+      border: 1px solid #383838;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      padding: 0.65rem 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .login-form-panel input:focus {
+      border-color: #555;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+    }
+    .login-form-panel input::placeholder { color: #555; }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.72rem;
+      border-radius: 8px;
+      border: none;
+      background: #efefef;
+      color: #111;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+      transition: background 0.15s;
+    }
+    .btn-login:hover { background: #fff; }
+
+    .login-signup-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .login-signup-footer a {
+      color: #aaa;
+      text-decoration: underline;
+    }
+    .login-signup-footer a:hover { color: #fff; }
+
+    /* ── Right panel: soldier image ── */
+    .login-deco-panel {
+      background: #000 url('/imgs/stormtrooper.png') center center / cover no-repeat;
+    }
+
+    /* ── Page-level terms footer ── */
+    .page-terms {
+      margin-top: 2rem;
+      font-size: 0.78rem;
+      color: #555;
+      text-align: center;
+    }
+    .page-terms a { color: #666; text-decoration: underline; }
+    .page-terms a:hover { color: #999; }
+
+    /* ── Alert ── */
+    .login-alert {
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.88rem;
+      margin-bottom: 1.1rem;
+      border: 1px solid transparent;
+    }
+    .login-alert.error {
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.35);
+      color: #fca5a5;
+    }
+
+    @media (max-width: 768px) {
+      .login-shell { grid-template-columns: 1fr; }
+      .login-deco-panel { display: none; }
+    }
+  </style>
 </head>
-<body class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-mark">🎮</div>
-      <h1>GameVault</h1>
-      <p>Create your account</p>
+<body class="register-page">
+
+  <div class="login-shell">
+    <!-- Form panel -->
+    <div class="login-form-panel">
+      <h1>Create account</h1>
+      <p class="subtitle">Join the GameVault community</p>
+
+      <div id="alert-box"></div>
+
+      <form method="POST" action="/register">
+        <div class="field-row">
+          <label for="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="3–30 characters, letters/numbers/_"
+            autocomplete="username"
+            minlength="3"
+            maxlength="30"
+            required
+          >
+        </div>
+
+        <div class="field-row">
+          <label for="email">Email address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          >
+        </div>
+
+        <div class="field-row">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Minimum 8 characters"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          >
+        </div>
+
+        <div class="field-row">
+          <label for="confirm_password">Confirm password</label>
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn-login">Create Account</button>
+      </form>
+
+      <div class="login-signup-footer">
+        Already have an account? <a href="/login">Sign in</a>
+      </div>
     </div>
 
-    <div id="alert-box"></div>
-
-    <form class="auth-form" method="POST" action="/register">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
-          placeholder="3–30 characters, letters/numbers/_"
-          autocomplete="username"
-          minlength="3"
-          maxlength="30"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email address</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          placeholder="you@example.com"
-          autocomplete="email"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Minimum 8 characters"
-          autocomplete="new-password"
-          minlength="8"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label for="confirm_password">Confirm password</label>
-        <input
-          type="password"
-          id="confirm_password"
-          name="confirm_password"
-          placeholder="Repeat your password"
-          autocomplete="new-password"
-          minlength="8"
-          required
-        >
-      </div>
-
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.7rem;">
-        Create Account
-      </button>
-    </form>
-
-    <div class="auth-footer">
-      Already have an account? <a href="/login">Sign in</a>
-    </div>
+    <!-- Decorative right panel -->
+    <div class="login-deco-panel"></div>
   </div>
+
+  <p class="page-terms">
+    By clicking continue, you agree to our
+    <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+  </p>
 
   <script>
     const ERRORS = {
       missing:         'Please fill in all fields.',
       username_length: 'Username must be between 3 and 30 characters.',
+      invalid_email:   'Please enter a valid email address.',
       username_chars:  'Username may only contain letters, numbers and underscores.',
       weak_password:   'Password must be at least 8 characters long.',
       mismatch:        'Passwords do not match.',
@@ -95,7 +241,7 @@
     if (errKey) {
       const msg = ERRORS[errKey] || 'An error occurred. Please try again.';
       const div = document.createElement('div');
-      div.className = 'alert alert-error';
+      div.className = 'login-alert error';
       div.textContent = msg;
       document.getElementById('alert-box').appendChild(div);
     }

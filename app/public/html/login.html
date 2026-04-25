@@ -5,59 +5,271 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — GameVault</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body.login-page {
+      background: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .login-shell {
+      display: grid;
+      grid-template-columns: 460px 460px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 920px;
+    }
+
+    /* ── Left panel: form ── */
+    .login-form-panel {
+      background: #242424;
+      padding: 3rem 2.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .login-form-panel h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.5px;
+    }
+
+    .login-form-panel .subtitle {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+
+    .login-form-panel .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .login-form-panel .field-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .login-form-panel label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #ccc;
+      letter-spacing: 0.2px;
+    }
+
+    .login-form-panel .forgot-link {
+      font-size: 0.82rem;
+      color: #888;
+      text-decoration: none;
+    }
+    .login-form-panel .forgot-link:hover { color: #bbb; text-decoration: underline; }
+
+    .login-form-panel input {
+      background: #1a1a1a;
+      border: 1px solid #383838;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      padding: 0.65rem 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .login-form-panel input:focus {
+      border-color: #555;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+    }
+    .login-form-panel input::placeholder { color: #555; }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.72rem;
+      border-radius: 8px;
+      border: none;
+      background: #efefef;
+      color: #111;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+      transition: background 0.15s;
+    }
+    .btn-login:hover { background: #fff; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+      color: #555;
+      font-size: 0.82rem;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #333;
+    }
+
+    .social-btns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+
+    .social-btn {
+      background: transparent;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 0.6rem;
+      cursor: not-allowed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      opacity: 0.35;
+    }
+    .social-btn:hover { background: transparent; border-color: #2a2a2a; }
+
+    .login-signup-footer {
+      text-align: center;
+      margin-top: 1.75rem;
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .login-signup-footer a {
+      color: #aaa;
+      text-decoration: underline;
+    }
+    .login-signup-footer a:hover { color: #fff; }
+
+    /* ── Right panel: soldier image ── */
+    .login-deco-panel {
+      background: #000 url('/imgs/stormtrooper.png') center center / cover no-repeat;
+    }
+
+    /* ── Page-level terms footer ── */
+    .page-terms {
+      margin-top: 2rem;
+      font-size: 0.78rem;
+      color: #555;
+      text-align: center;
+    }
+    .page-terms a { color: #666; text-decoration: underline; }
+    .page-terms a:hover { color: #999; }
+
+    /* ── Alert ── */
+    .login-alert {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.35);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.88rem;
+      margin-bottom: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+      .login-shell { grid-template-columns: 1fr; }
+      .login-deco-panel { display: none; }
+    }
+  </style>
 </head>
-<body class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-mark">🎮</div>
-      <h1>GameVault</h1>
-      <p>Sign in to join the discussion</p>
-    </div>
+<body class="login-page">
 
-    <div id="alert-box"></div>
+  <div class="login-shell">
+    <!-- Form panel -->
+    <div class="login-form-panel">
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in to your GameVault account</p>
 
-    <form class="auth-form" method="POST" action="/login">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
-          placeholder="Enter your username"
-          autocomplete="username"
-          required
-        >
+      <div id="alert-box"></div>
+
+      <form method="POST" action="/login">
+        <div class="field-row">
+          <label for="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter your username"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <div class="field-row">
+          <div class="field-label-row">
+            <label for="password">Password</label>
+            <a href="#" class="forgot-link">Forgot your password?</a>
+          </div>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn-login">Login</button>
+      </form>
+
+      <div class="divider">Or continue with</div>
+
+      <div class="social-btns">
+        <button class="social-btn" title="Discord" aria-label="Discord" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+          </svg>
+        </button>
+        <button class="social-btn" title="Steam" aria-label="Steam" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3.5"/>
+            <path d="M12 8.5V5M8.5 12H5M12 15.5V19M15.5 12H19"/>
+          </svg>
+        </button>
+        <button class="social-btn" title="Twitch" aria-label="Twitch" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2H3v16h5v4l4-4h5l4-4V2zM11 11V7M16 11V7"/>
+          </svg>
+        </button>
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Enter your password"
-          autocomplete="current-password"
-          required
-        >
+      <div class="login-signup-footer">
+        Don't have an account? <a href="/register">Sign up</a>
       </div>
-
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.7rem;">
-        Sign In
-      </button>
-    </form>
-
-    <div class="auth-footer">
-      Don't have an account? <a href="/register">Create one</a>
     </div>
+
+    <!-- Decorative right panel -->
+    <div class="login-deco-panel"></div>
   </div>
 
+  <p class="page-terms">
+    By clicking continue, you agree to our
+    <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+  </p>
+
   <script>
-    // Show generic error from query param — same message regardless of cause
-    // to prevent username enumeration attacks.
     const params = new URLSearchParams(window.location.search);
     if (params.get('error')) {
       const div = document.createElement('div');
-      div.className = 'alert alert-error';
+      div.className = 'login-alert';
       div.textContent = 'Invalid username or password. Please try again.';
       document.getElementById('alert-box').appendChild(div);
     }
