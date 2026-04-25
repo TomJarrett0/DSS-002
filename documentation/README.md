@@ -29,6 +29,7 @@ A secure, session-based forum for videogame discussion built with Node.js, Expre
 |---|---|
 | `DATABASE_URL` | Full PostgreSQL connection string (`postgresql://user:pass@host:port/db`) |
 | `SESSION_SECRET` | Long random string used to sign session cookies (keep this secret) |
+| `PASSWORD_PEPPER` | Secret string appended to passwords before hashing — never change after users register |
 | `PORT` | Port the server listens on (default: 3000) |
 | `NODE_ENV` | `development` or `production` — affects cookie security settings |
 
@@ -49,14 +50,56 @@ A secure, session-based forum for videogame discussion built with Node.js, Expre
 
 ## New dependencies explained
 
-### `bcrypt`
-**What it is:** A password-hashing library.
+### Password security — hashing, salting and peppering
 
-**How it works:** When a user registers, instead of storing their plain-text password, we run it through bcrypt which applies a slow, salted hashing algorithm (Blowfish cipher). The result (e.g. `$2b$12$...`) is what gets stored in the database. On login, bcrypt re-hashes the entered password with the same salt embedded in the stored hash and compares the results — the original password is never stored or needed again.
+Passwords in GameVault are protected by three layered mechanisms. Here is each one explained:
 
-**Why it matters:** Even if the database is compromised, attackers get only hashes — cracking bcrypt is intentionally slow (the `12` in `$2b$12$` is the "cost factor": 2^12 = 4096 rounds). Plain SHA-256 or MD5 hashing is not suitable for passwords; bcrypt is specifically designed for this.
+---
 
-**Usage in this project:** `app/routes/auth.js` — `bcrypt.hash()` on register, `bcrypt.compare()` on login. We always call `bcrypt.compare()` even when the username doesn't exist (using a dummy hash), so an attacker cannot tell from response time whether a username is valid.
+#### 1. Hashing (bcrypt)
+
+**What it is:** A one-way transformation — a password goes in, a fixed-length string comes out. You cannot reverse it to recover the original password.
+
+**Why bcrypt specifically:** Most hashing algorithms (MD5, SHA-256) are designed to be fast — which is a problem for passwords, because an attacker can try billions of guesses per second. bcrypt is intentionally slow. The cost factor (`12` in `$2b$12$...`) means bcrypt runs 2^12 = 4,096 internal rounds. A legitimate login takes ~250 ms — imperceptible to the user — but makes brute-forcing billions of guesses impractical.
+
+**In this project:** `bcrypt.hash(password + PEPPER, 12)` on register; `bcrypt.compare(password + PEPPER, storedHash)` on login. The stored hash looks like: `$2b$12$<22-char salt><31-char hash>`.
+
+---
+
+#### 2. Salting (automatic, per-user — handled by bcrypt)
+
+**What it is:** A unique random string generated for every password hash. bcrypt generates it automatically and embeds it in the stored hash string.
+
+**Why it matters:** Without salts, two users with the same password would produce identical hashes. An attacker with a stolen database could use a precomputed "rainbow table" to crack many accounts at once. With salts, every hash is unique — each account must be cracked individually.
+
+**In this project:** No code needed — bcrypt handles this internally. The salt is visible in the stored hash (the 22 characters after `$2b$12$`) and is used automatically during `bcrypt.compare()`.
+
+---
+
+#### 3. Peppering (server-side secret — this project)
+
+**What it is:** A secret string stored in the server's `.env` file (never in the database) that is appended to every password before hashing.
+
+**Why it matters:** Salts protect against bulk cracking if the *database* is stolen. A pepper adds a second layer: even with the full database, an attacker cannot crack any password without also compromising the *server environment*. The two attack surfaces are separate.
+
+**In this project:** `PASSWORD_PEPPER` in `.env` is loaded at startup. If it is missing the server refuses to start. The flow is:
+
+```
+REGISTRATION:  plaintext password + PEPPER  →  bcrypt.hash()  →  stored in DB
+LOGIN:         entered password  + PEPPER  →  bcrypt.compare(peppered, storedHash)
+```
+
+**Important:** The pepper must never change after users have registered. Changing it would make every stored hash unverifiable, locking all users out.
+
+---
+
+#### Summary table
+
+| Layer | Where stored | Protects against |
+|---|---|---|
+| **Hash** (bcrypt) | Database (as the hash itself) | Reversing the password from the stored value |
+| **Salt** (per-user, auto) | Embedded in the hash string | Rainbow table / bulk cracking |
+| **Pepper** (shared secret) | Server `.env` only | Cracking even if the full database is stolen |
 
 ---
 

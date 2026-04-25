@@ -6,7 +6,51 @@ const { redirectIfLoggedIn } = require('../middleware/auth');
 
 const router = express.Router();
 
+// ── Password security constants ───────────────────────────────────────────────
+//
+// HOW PASSWORD SECURITY WORKS IN THIS PROJECT
+// ============================================
+//
+// Three layers protect stored passwords:
+//
+// 1. PEPPER (this file, applied before hashing)
+//    A secret string stored in .env (never in the database) that is appended
+//    to every password before it is hashed. If the database is stolen but the
+//    server environment is not, the attacker cannot crack the hashes because
+//    they don't have the pepper. Unlike salts, the pepper is the same for all
+//    users and must never change after accounts are created.
+//
+// 2. SALT (handled automatically by bcrypt)
+//    bcrypt generates a unique random salt for every hash it produces. The salt
+//    is embedded in the stored hash string (the characters after "$2b$12$").
+//    This means two users with the same password get completely different hashes,
+//    so an attacker cannot use a precomputed rainbow table to crack them in bulk.
+//
+// 3. HASHING WITH A COST FACTOR (bcrypt)
+//    bcrypt is deliberately slow. The cost factor (SALT_ROUNDS = 12) means bcrypt
+//    runs 2^12 = 4096 internal iterations. On modern hardware this takes ~250ms —
+//    fast enough for a legitimate login but orders of magnitude too slow for an
+//    attacker trying billions of guesses. MD5 and plain SHA-256 are NOT suitable
+//    for passwords; bcrypt is specifically designed for this use case.
+//
+// REGISTRATION FLOW:
+//   plaintext password  →  password + PEPPER  →  bcrypt.hash()  →  stored hash
+//
+// LOGIN FLOW:
+//   entered password  →  password + PEPPER  →  bcrypt.compare(peppered, storedHash)
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
 const SALT_ROUNDS = 12;
+
+// The pepper is loaded from the environment so it never touches the database.
+// If PASSWORD_PEPPER is missing the app exits immediately — running without a
+// pepper would silently produce hashes that cannot be verified after one is added.
+const PEPPER = process.env.PASSWORD_PEPPER;
+if (!PEPPER) {
+  console.error('FATAL: PASSWORD_PEPPER is not set in .env');
+  process.exit(1);
+}
 
 // Dummy hash used when the username doesn't exist so bcrypt.compare always
 // runs — prevents timing-based username enumeration.
@@ -31,8 +75,10 @@ router.post('/login', redirectIfLoggedIn, async (req, res) => {
 
     // Always run compare regardless of whether the user exists to prevent
     // timing attacks that could reveal valid usernames.
+    // The pepper is appended before comparing — must match exactly how it was
+    // applied during registration (password + PEPPER → bcrypt.hash).
     const hashToCompare = user ? user.password_hash : DUMMY_HASH;
-    const valid = await bcrypt.compare(password ?? '', hashToCompare);
+    const valid = await bcrypt.compare((password ?? '') + PEPPER, hashToCompare);
 
     if (!user || !valid) {
       // Generic message — same response whether username or password is wrong.
@@ -118,7 +164,11 @@ router.post('/register', redirectIfLoggedIn, async (req, res) => {
       return res.redirect('/register?error=taken');
     }
 
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    // Append the server-side pepper before hashing.
+    // bcrypt will also generate a unique per-user salt automatically and embed
+    // it in the resulting hash string — so the stored value is protected by
+    // both the pepper (server secret) and the salt (per-user random value).
+    const passwordHash = await bcrypt.hash(password + PEPPER, SALT_ROUNDS);
 
     const result = await pool.query(
       `INSERT INTO users (username, email, password_hash, role)
