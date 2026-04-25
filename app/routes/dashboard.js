@@ -1,14 +1,9 @@
 const express        = require('express');
 const path           = require('path');
 const pool           = require('../db/pool');
-const { requireLogin } = require('../middleware/auth');
+const { requireLogin, requirePostOwner } = require('../middleware/auth');
 
 const router = express.Router();
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isUuid(v) {
-  return typeof v === 'string' && UUID_RE.test(v);
-}
 
 // ── Page route ────────────────────────────────────────────────────────────────
 
@@ -43,29 +38,20 @@ router.get('/api/dashboard/posts', requireLogin, async (req, res) => {
 
 // ── API: edit a post (author only) ────────────────────────────────────────────
 
-router.put('/api/posts/:id', requireLogin, async (req, res) => {
-  const postId = req.params.id;
-  if (!isUuid(postId)) return res.status(400).json({ error: 'Invalid post ID.' });
-
+router.put('/api/posts/:id', requireLogin, requirePostOwner, async (req, res) => {
   const { title, body, categoryId } = req.body;
   if (!title?.trim() || !body?.trim()) {
     return res.status(400).json({ error: 'Title and body are required.' });
   }
 
-  const userId = req.session.user.id;
-
+  const slug = `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
   try {
-    const check = await pool.query('SELECT author_id FROM posts WHERE id = $1', [postId]);
-    if (!check.rows.length) return res.status(404).json({ error: 'Post not found.' });
-    if (check.rows[0].author_id !== userId) return res.status(403).json({ error: 'Forbidden.' });
-
-    const slug = `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
     const result = await pool.query(
       `UPDATE posts
           SET title = $1, slug = $2, body = $3, category_id = $4, updated_at = NOW()
         WHERE id = $5
         RETURNING id, title, slug, body, status, visibility, updated_at`,
-      [title.trim(), slug, body.trim(), categoryId || null, postId]
+      [title.trim(), slug, body.trim(), categoryId || null, req.params.id]
     );
     res.json({ post: result.rows[0] });
   } catch (err) {
@@ -76,29 +62,20 @@ router.put('/api/posts/:id', requireLogin, async (req, res) => {
 
 // ── API: publish / unpublish a post (author only) ─────────────────────────────
 
-router.patch('/api/posts/:id/status', requireLogin, async (req, res) => {
-  const postId = req.params.id;
-  if (!isUuid(postId)) return res.status(400).json({ error: 'Invalid post ID.' });
-
+router.patch('/api/posts/:id/status', requireLogin, requirePostOwner, async (req, res) => {
   const { status } = req.body;
   if (!['published', 'draft'].includes(status)) {
     return res.status(400).json({ error: 'status must be "published" or "draft".' });
   }
 
-  const userId     = req.session.user.id;
   const visibility = status === 'published' ? 'public' : 'private';
-
   try {
-    const check = await pool.query('SELECT author_id FROM posts WHERE id = $1', [postId]);
-    if (!check.rows.length) return res.status(404).json({ error: 'Post not found.' });
-    if (check.rows[0].author_id !== userId) return res.status(403).json({ error: 'Forbidden.' });
-
     const result = await pool.query(
       `UPDATE posts
           SET status = $1, visibility = $2, updated_at = NOW()
         WHERE id = $3
         RETURNING id, status, visibility`,
-      [status, visibility, postId]
+      [status, visibility, req.params.id]
     );
     res.json({ post: result.rows[0] });
   } catch (err) {
