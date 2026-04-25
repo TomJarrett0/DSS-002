@@ -4,6 +4,11 @@ const pool    = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value) {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
 
 // All routes in this file require admin role (enforced in middleware)
 
@@ -17,17 +22,17 @@ router.get('/', requireAdmin, (req, res) => {
 
 router.get('/api/stats', requireAdmin, async (req, res) => {
   try {
-    const [users, threads, posts, categories] = await Promise.all([
+    const [users, posts, comments, categories] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM users'),
-      pool.query('SELECT COUNT(*)::int AS count FROM threads'),
       pool.query('SELECT COUNT(*)::int AS count FROM posts'),
+      pool.query('SELECT COUNT(*)::int AS count FROM comments'),
       pool.query('SELECT COUNT(*)::int AS count FROM categories'),
     ]);
 
     res.json({
       userCount:     users.rows[0].count,
-      threadCount:   threads.rows[0].count,
       postCount:     posts.rows[0].count,
+      commentCount:  comments.rows[0].count,
       categoryCount: categories.rows[0].count,
     });
   } catch (err) {
@@ -55,8 +60,8 @@ router.get('/api/users', requireAdmin, async (req, res) => {
 // ── API: change a user's role ─────────────────────────────────────────────────
 
 router.patch('/api/users/:id/role', requireAdmin, async (req, res) => {
-  const targetId = parseInt(req.params.id, 10);
-  if (isNaN(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
+  const targetId = req.params.id;
+  if (!isUuid(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
 
   const { role } = req.body;
   if (!['user', 'admin'].includes(role)) {
@@ -86,8 +91,8 @@ router.patch('/api/users/:id/role', requireAdmin, async (req, res) => {
 // ── API: delete a user ────────────────────────────────────────────────────────
 
 router.delete('/api/users/:id', requireAdmin, async (req, res) => {
-  const targetId = parseInt(req.params.id, 10);
-  if (isNaN(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
+  const targetId = req.params.id;
+  if (!isUuid(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
 
   if (targetId === req.session.user.id) {
     return res.status(400).json({ error: 'You cannot delete your own account.' });
@@ -152,8 +157,8 @@ router.post('/api/categories', requireAdmin, async (req, res) => {
 // ── API: delete category ──────────────────────────────────────────────────────
 
 router.delete('/api/categories/:id', requireAdmin, async (req, res) => {
-  const catId = parseInt(req.params.id, 10);
-  if (isNaN(catId)) return res.status(400).json({ error: 'Invalid category ID.' });
+  const catId = req.params.id;
+  if (!isUuid(catId)) return res.status(400).json({ error: 'Invalid category ID.' });
 
   try {
     const result = await pool.query(

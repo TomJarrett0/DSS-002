@@ -17,42 +17,59 @@ CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-  id            SERIAL PRIMARY KEY,
-  username      VARCHAR(30)  UNIQUE NOT NULL,
-  email         VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  role          VARCHAR(10)  NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  created_at    TIMESTAMP    NOT NULL DEFAULT NOW()
+  username character varying(30) NOT NULL,
+  email character varying(255) NOT NULL,
+  password_hash character varying(255) NOT NULL,
+  role character varying(10) DEFAULT 'user'::character varying NOT NULL,
+  created_at timestamp without time zone DEFAULT now() NOT NULL,
+  subscription_status boolean DEFAULT false,
+  is_suspended boolean DEFAULT false,
+  twofa_enabled boolean DEFAULT false,
+  twofa_secret_encrypted text,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  failed_login_attempts integer DEFAULT 0 NOT NULL,
+  lockout_until timestamp with time zone,
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  CONSTRAINT users_role_check CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'admin'::character varying])::text[])))
 );
 
 -- Forum categories
 CREATE TABLE IF NOT EXISTS categories (
-  id          SERIAL PRIMARY KEY,
-  name        VARCHAR(100) NOT NULL,
-  description TEXT         NOT NULL,
-  icon        VARCHAR(10)  NOT NULL DEFAULT '🎮',
-  slug        VARCHAR(100) UNIQUE NOT NULL,
-  created_at  TIMESTAMP    NOT NULL DEFAULT NOW()
-);
-
--- Threads (topics within a category)
-CREATE TABLE IF NOT EXISTS threads (
-  id          SERIAL PRIMARY KEY,
-  title       VARCHAR(255) NOT NULL,
-  category_id INTEGER      NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-  user_id     INTEGER      REFERENCES users(id) ON DELETE SET NULL,
-  created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
-  updated_at  TIMESTAMP    NOT NULL DEFAULT NOW()
+    name character varying(100) NOT NULL,
+    description text NOT NULL,
+    icon character varying(10) DEFAULT '🎮'::character varying NOT NULL,
+    slug character varying(100) NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL
 );
 
 -- Posts (the opening post + all replies within a thread)
 CREATE TABLE IF NOT EXISTS posts (
-  id         SERIAL PRIMARY KEY,
-  content    TEXT    NOT NULL,
-  thread_id  INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  created_at timestamp without time zone DEFAULT now() NOT NULL,
+  updated_at timestamp without time zone DEFAULT now() NOT NULL,
+  author_id uuid,
+  title text NOT NULL,
+  slug text NOT NULL,
+  body text,
+  visibility text DEFAULT 'private'::text,
+  status text DEFAULT 'draft'::text,
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  category_id uuid,
+  CONSTRAINT chk_status CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text]))),
+  CONSTRAINT chk_visibility CHECK ((visibility = ANY (ARRAY['public'::text, 'premium'::text, 'private'::text])))
+);
+
+-- Comments (replies to posts, can be nested)
+CREATE TABLE comments (
+    content text NOT NULL,
+    is_edited boolean DEFAULT false,
+    is_deleted boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid,
+    user_id uuid,
+    parent_comment_id uuid
 );
 
 -- ============================================================

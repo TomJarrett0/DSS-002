@@ -26,8 +26,8 @@ async function loadStats() {
   if (!res.ok) return;
   const data = await res.json();
   document.getElementById('stat-users').textContent      = data.userCount;
-  document.getElementById('stat-threads').textContent    = data.threadCount;
-  document.getElementById('stat-posts').textContent      = data.postCount;
+  document.getElementById('stat-threads').textContent    = data.postCount;
+  document.getElementById('stat-posts').textContent      = data.commentCount;
   document.getElementById('stat-categories').textContent = data.categoryCount;
 }
 

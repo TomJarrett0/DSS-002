@@ -34,7 +34,7 @@ function formatRelative(dateStr) {
   return formatDate(dateStr);
 }
 
-function buildThreadItem(thread) {
+function buildArticleItem(post) {
   const row = document.createElement('div');
   row.className = 'thread-item';
 
@@ -43,16 +43,16 @@ function buildThreadItem(thread) {
   const titleEl = document.createElement('div');
   titleEl.className = 'thread-title';
   const link = document.createElement('a');
-  link.href        = `/thread/${thread.id}`;
-  link.textContent = thread.title;
+  link.href        = `/thread/${post.id}`;
+  link.textContent = post.title;
   titleEl.appendChild(link);
 
   const meta = document.createElement('div');
   meta.className = 'thread-meta';
   const bySpan = document.createElement('span');
-  bySpan.textContent = `by ${thread.author}`;
+  bySpan.textContent = `by ${post.author}`;
   const dateSpan = document.createElement('span');
-  dateSpan.textContent = formatDate(thread.created_at);
+  dateSpan.textContent = formatDate(post.created_at);
   meta.append(bySpan, dateSpan);
 
   info.append(titleEl, meta);
@@ -61,11 +61,11 @@ function buildThreadItem(thread) {
   stats.className = 'thread-stats';
   const replyCount = document.createElement('span');
   replyCount.className   = 'reply-count';
-  replyCount.textContent = thread.reply_count;
+  replyCount.textContent = post.comment_count;
   const replyLabel = document.createElement('span');
-  replyLabel.textContent = 'replies';
+  replyLabel.textContent = 'comments';
   const lastReply = document.createElement('div');
-  lastReply.textContent = `Last: ${formatRelative(thread.last_reply_at)}`;
+  lastReply.textContent = `Last: ${formatRelative(post.last_comment_at)}`;
   stats.append(replyCount, replyLabel, lastReply);
 
   row.append(info, stats);
@@ -77,7 +77,7 @@ async function loadCategory() {
   if (res.status === 404) { window.location.href = '/'; return; }
   if (!res.ok) { return; }
 
-  const { category, threads } = await res.json();
+  const { category, posts } = await res.json();
   categoryId = category.id;
 
   document.title = `${category.name} — GameVault`;
@@ -87,14 +87,14 @@ async function loadCategory() {
   const container = document.getElementById('threads-container');
   container.textContent = '';
 
-  if (!threads.length) {
+  if (!posts.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     const icon = document.createElement('div');
     icon.className   = 'empty-icon';
     icon.textContent = '💬';
     const p = document.createElement('p');
-    p.textContent = 'No threads yet. Be the first to start one!';
+    p.textContent = 'No posts yet. Be the first to publish one!';
     empty.append(icon, p);
     container.appendChild(empty);
     return;
@@ -102,7 +102,7 @@ async function loadCategory() {
 
   const list = document.createElement('div');
   list.className = 'thread-list';
-  threads.forEach(t => list.appendChild(buildThreadItem(t)));
+  posts.forEach(post => list.appendChild(buildArticleItem(post)));
   container.appendChild(list);
 }
 
@@ -131,7 +131,7 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  const res = await fetch('/api/threads', {
+  const res = await fetch('/api/posts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, content, categoryId }),
@@ -143,8 +143,8 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  const { threadId } = await res.json();
-  window.location.href = `/thread/${threadId}`;
+  const { postId } = await res.json();
+  window.location.href = `/thread/${postId}`;
 });
 
 (async () => {

@@ -50,16 +50,16 @@ function buildCategoryCard(cat) {
   const meta = document.createElement('div');
   meta.className = 'cat-meta';
 
-  const threadStat = document.createElement('span');
-  threadStat.textContent = `💬 ${cat.thread_count} threads`;
+  const articleStat = document.createElement('span');
+  articleStat.textContent = `📝 ${cat.post_count} posts`;
 
-  const postStat = document.createElement('span');
-  postStat.textContent = `📝 ${cat.post_count} posts`;
+  const commentStat = document.createElement('span');
+  commentStat.textContent = `💬 ${cat.comment_count} comments`;
 
   const activity = document.createElement('span');
   activity.textContent = `🕐 ${formatRelative(cat.last_activity)}`;
 
-  meta.append(threadStat, postStat, activity);
+  meta.append(articleStat, commentStat, activity);
   body.append(name, desc, meta);
   a.append(icon, body);
   return a;

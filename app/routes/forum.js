@@ -4,6 +4,11 @@ const pool    = require('../db/pool');
 const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value) {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
 
 // ── Page routes (serve HTML shells) ──────────────────────────────────────────
 
@@ -32,13 +37,19 @@ router.get('/api/categories', requireLogin, async (req, res) => {
     const result = await pool.query(`
       SELECT
         c.id, c.name, c.description, c.icon, c.slug,
-        COUNT(DISTINCT t.id)::int  AS thread_count,
-        COUNT(DISTINCT p.id)::int  AS post_count,
-        MAX(p.created_at)          AS last_activity
+        COUNT(DISTINCT p.id)::int   AS post_count,
+        COUNT(DISTINCT cm.id)::int  AS comment_count,
+        GREATEST(
+          COALESCE(MAX(p.created_at), 'epoch'::timestamp),
+          COALESCE(MAX(cm.created_at), 'epoch'::timestamp)
+        )                           AS last_activity
       FROM categories c
-      LEFT JOIN threads t ON t.category_id = c.id
-      LEFT JOIN posts   p ON p.thread_id   = t.id
-      GROUP BY c.id
+      LEFT JOIN posts p
+        ON p.category_id = c.id
+       AND p.visibility = 'public'
+       AND p.status = 'published'
+      LEFT JOIN comments cm ON cm.post_id = p.id
+      GROUP BY c.id, c.name, c.description, c.icon, c.slug
       ORDER BY c.id
     `);
     res.json({ categories: result.rows });
@@ -63,68 +74,88 @@ router.get('/api/categories/:slug', requireLogin, async (req, res) => {
 
     const threadsResult = await pool.query(`
       SELECT
-        t.id, t.title, t.created_at, t.updated_at,
+        p.id, p.title, p.slug, p.body, p.created_at, p.updated_at,
         u.username AS author,
-        COUNT(p.id)::int                          AS reply_count,
-        MAX(p.created_at)                         AS last_reply_at,
-        (SELECT username FROM users WHERE id =
-          (SELECT user_id FROM posts WHERE thread_id = t.id
-           ORDER BY created_at DESC LIMIT 1))     AS last_reply_by
-      FROM threads t
-      JOIN users  u ON u.id = t.user_id
-      LEFT JOIN posts p ON p.thread_id = t.id
-      WHERE t.category_id = $1
-      GROUP BY t.id, u.username
-      ORDER BY COALESCE(MAX(p.created_at), t.created_at) DESC
+        u.role     AS author_role,
+        COUNT(DISTINCT cm.id)::int AS comment_count,
+        MAX(cm.created_at)         AS last_comment_at,
+        (
+          SELECT u2.username
+          FROM comments cm2
+          JOIN users u2 ON u2.id = cm2.user_id
+          WHERE cm2.post_id = p.id
+          ORDER BY cm2.created_at DESC
+          LIMIT 1
+        ) AS last_comment_by
+      FROM posts p
+      JOIN users u ON u.id = p.author_id
+      LEFT JOIN comments cm ON cm.post_id = p.id
+      WHERE p.category_id = $1
+        AND p.visibility = 'public'
+        AND p.status = 'published'
+      GROUP BY p.id, p.title, p.slug, p.body, p.created_at, p.updated_at, u.username, u.role
+      ORDER BY COALESCE(MAX(cm.created_at), p.created_at) DESC
     `, [category.id]);
 
-    res.json({ category, threads: threadsResult.rows });
+    res.json({ category, posts: threadsResult.rows });
   } catch (err) {
     console.error('GET /api/categories/:slug error:', err);
     res.status(500).json({ error: 'Failed to load category.' });
   }
 });
 
-// ── API: thread + posts ───────────────────────────────────────────────────────
+// ── API: article + comments ─────────────────────────────────────────────────
 
-router.get('/api/threads/:id', requireLogin, async (req, res) => {
-  const threadId = parseInt(req.params.id, 10);
-  if (isNaN(threadId)) return res.status(400).json({ error: 'Invalid thread ID.' });
+router.get('/api/posts/:id', requireLogin, async (req, res) => {
+  const postId = req.params.id;
+  if (!isUuid(postId)) return res.status(400).json({ error: 'Invalid post ID.' });
 
   try {
-    const threadResult = await pool.query(`
-      SELECT t.id, t.title, t.created_at, t.category_id,
+    const articleResult = await pool.query(`
+      SELECT p.id, p.title, p.slug, p.body, p.created_at, p.updated_at,
+             p.author_id, p.category_id,
              u.username AS author,
-             c.name AS category_name, c.slug AS category_slug
-      FROM threads t
-      JOIN users      u ON u.id = t.user_id
-      JOIN categories c ON c.id = t.category_id
-      WHERE t.id = $1
-    `, [threadId]);
+             u.role     AS author_role,
+             c.name     AS category_name,
+             c.slug     AS category_slug,
+             p.visibility,
+             p.status
+      FROM posts p
+      JOIN users u ON u.id = p.author_id
+      JOIN categories c ON c.id = p.category_id
+      WHERE p.id = $1
+        AND (
+          (p.visibility = 'public' AND p.status = 'published')
+          OR p.author_id = $2
+          OR $3 = 'admin'
+        )
+    `, [postId, req.session.user.id, req.session.user.role]);
 
-    if (!threadResult.rows.length) {
-      return res.status(404).json({ error: 'Thread not found.' });
+    if (!articleResult.rows.length) {
+      return res.status(404).json({ error: 'Post not found.' });
     }
 
-    const postsResult = await pool.query(`
-      SELECT p.id, p.content, p.created_at, p.updated_at, p.user_id,
+    const commentsResult = await pool.query(`
+      SELECT c.id, c.post_id, c.user_id, c.parent_comment_id,
+             c.content, c.is_edited, c.is_deleted,
+             c.created_at, c.updated_at,
              u.username, u.role
-      FROM posts p
-      JOIN users u ON u.id = p.user_id
-      WHERE p.thread_id = $1
-      ORDER BY p.created_at ASC
-    `, [threadId]);
+      FROM comments c
+      LEFT JOIN users u ON u.id = c.user_id
+      WHERE c.post_id = $1
+      ORDER BY c.created_at ASC
+    `, [postId]);
 
-    res.json({ thread: threadResult.rows[0], posts: postsResult.rows });
+    res.json({ article: articleResult.rows[0], comments: commentsResult.rows });
   } catch (err) {
-    console.error('GET /api/threads/:id error:', err);
-    res.status(500).json({ error: 'Failed to load thread.' });
+    console.error('GET /api/posts/:id error:', err);
+    res.status(500).json({ error: 'Failed to load post.' });
   }
 });
 
-// ── API: create thread ────────────────────────────────────────────────────────
+// ── API: create article ──────────────────────────────────────────────────────
 
-router.post('/api/threads', requireLogin, async (req, res) => {
+router.post('/api/posts', requireLogin, async (req, res) => {
   const { title, content, categoryId } = req.body;
   const userId = req.session.user.id;
 
@@ -136,70 +167,76 @@ router.post('/api/threads', requireLogin, async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const threadResult = await client.query(
-      `INSERT INTO threads (title, category_id, user_id)
-       VALUES ($1, $2, $3) RETURNING id`,
-      [title.trim(), categoryId, userId]
+    const postResult = await client.query(
+      `INSERT INTO posts (author_id, title, slug, body, visibility, status, category_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
+        userId,
+        title.trim(),
+        `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+        content.trim(),
+        'public',
+        'published',
+        categoryId,
+      ]
     );
-    const threadId = threadResult.rows[0].id;
-
-    await client.query(
-      `INSERT INTO posts (content, thread_id, user_id) VALUES ($1, $2, $3)`,
-      [content.trim(), threadId, userId]
-    );
+    const postId = postResult.rows[0].id;
 
     await client.query('COMMIT');
-    res.status(201).json({ threadId });
+    res.status(201).json({ postId });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('POST /api/threads error:', err);
-    res.status(500).json({ error: 'Failed to create thread.' });
+    console.error('POST /api/posts error:', err);
+    res.status(500).json({ error: 'Failed to create post.' });
   } finally {
     client.release();
   }
 });
 
-// ── API: reply to thread ──────────────────────────────────────────────────────
+// ── API: create comment ──────────────────────────────────────────────────────
 
-router.post('/api/posts', requireLogin, async (req, res) => {
-  const { content, threadId } = req.body;
+router.post('/api/comments', requireLogin, async (req, res) => {
+  const { content, postId, parentCommentId } = req.body;
   const userId = req.session.user.id;
 
-  if (!content?.trim() || !threadId) {
-    return res.status(400).json({ error: 'Content and threadId are required.' });
+  if (!content?.trim() || !isUuid(postId)) {
+    return res.status(400).json({ error: 'Content and postId are required.' });
+  }
+
+  if (parentCommentId && !isUuid(parentCommentId)) {
+    return res.status(400).json({ error: 'Invalid parent comment ID.' });
   }
 
   try {
     const result = await pool.query(
-      `INSERT INTO posts (content, thread_id, user_id)
-       VALUES ($1, $2, $3) RETURNING id, created_at`,
-      [content.trim(), threadId, userId]
+      `INSERT INTO comments (post_id, user_id, content, parent_comment_id)
+       VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
+      [
+        postId,
+        userId,
+        content.trim(),
+        parentCommentId || null,
+      ]
     );
 
-    // Update thread's updated_at so it bubbles to top in category view
-    await pool.query(
-      'UPDATE threads SET updated_at = NOW() WHERE id = $1',
-      [threadId]
-    );
-
-    res.status(201).json({ postId: result.rows[0].id });
+    res.status(201).json({ commentId: result.rows[0].id });
   } catch (err) {
-    console.error('POST /api/posts error:', err);
-    res.status(500).json({ error: 'Failed to post reply.' });
+    console.error('POST /api/comments error:', err);
+    res.status(500).json({ error: 'Failed to create comment.' });
   }
 });
 
-// ── API: delete post ──────────────────────────────────────────────────────────
+// ── API: delete post/article ────────────────────────────────────────────────
 
 router.delete('/api/posts/:id', requireLogin, async (req, res) => {
-  const postId = parseInt(req.params.id, 10);
-  if (isNaN(postId)) return res.status(400).json({ error: 'Invalid post ID.' });
+  const postId = req.params.id;
+  if (!isUuid(postId)) return res.status(400).json({ error: 'Invalid post ID.' });
 
   const { id: userId, role } = req.session.user;
 
   try {
     const postResult = await pool.query(
-      'SELECT user_id FROM posts WHERE id = $1',
+      'SELECT author_id FROM posts WHERE id = $1',
       [postId]
     );
 
@@ -208,7 +245,7 @@ router.delete('/api/posts/:id', requireLogin, async (req, res) => {
     }
 
     // Only the post author or an admin may delete
-    if (postResult.rows[0].user_id !== userId && role !== 'admin') {
+    if (postResult.rows[0].author_id !== userId && role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden.' });
     }
 
@@ -220,34 +257,33 @@ router.delete('/api/posts/:id', requireLogin, async (req, res) => {
   }
 });
 
-// ── API: delete thread ────────────────────────────────────────────────────────
+// ── API: delete comment ──────────────────────────────────────────────────────
 
-router.delete('/api/threads/:id', requireLogin, async (req, res) => {
-  const threadId = parseInt(req.params.id, 10);
-  if (isNaN(threadId)) return res.status(400).json({ error: 'Invalid thread ID.' });
+router.delete('/api/comments/:id', requireLogin, async (req, res) => {
+  const commentId = req.params.id;
+  if (!isUuid(commentId)) return res.status(400).json({ error: 'Invalid comment ID.' });
 
   const { id: userId, role } = req.session.user;
 
   try {
     const threadResult = await pool.query(
-      'SELECT user_id FROM threads WHERE id = $1',
-      [threadId]
+      'SELECT user_id FROM comments WHERE id = $1',
+      [commentId]
     );
 
     if (!threadResult.rows.length) {
-      return res.status(404).json({ error: 'Thread not found.' });
+      return res.status(404).json({ error: 'Comment not found.' });
     }
 
     if (threadResult.rows[0].user_id !== userId && role !== 'admin') {
       return res.status(403).json({ error: 'Forbidden.' });
     }
 
-    // Cascades to posts via FK constraint
-    await pool.query('DELETE FROM threads WHERE id = $1', [threadId]);
+    await pool.query('DELETE FROM comments WHERE id = $1', [commentId]);
     res.json({ success: true });
   } catch (err) {
-    console.error('DELETE /api/threads/:id error:', err);
-    res.status(500).json({ error: 'Failed to delete thread.' });
+    console.error('DELETE /api/comments/:id error:', err);
+    res.status(500).json({ error: 'Failed to delete comment.' });
   }
 });
 
