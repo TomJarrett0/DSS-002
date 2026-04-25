@@ -8,9 +8,10 @@ const fs             = require('fs');
 const pool           = require('./db/pool');
 const loginRateLimiter = require('./middleware/rateLimiter');
 
-const authRoutes  = require('./routes/auth');
-const forumRoutes = require('./routes/forum');
-const adminRoutes = require('./routes/admin');
+const authRoutes      = require('./routes/auth');
+const forumRoutes     = require('./routes/forum');
+const dashboardRoutes = require('./routes/dashboard');
+const adminRoutes     = require('./routes/admin');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ app.use('/login', loginRateLimiter);
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/',      authRoutes);
 app.use('/',      forumRoutes);
+app.use('/',      dashboardRoutes);
 app.use('/admin', adminRoutes);
 
 // ── 404 fallback ──────────────────────────────────────────────────────────────

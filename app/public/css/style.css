@@ -324,6 +324,39 @@ tbody tr:hover td { background: var(--bg-card-hover); }
 .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty-state p { font-size: 0.9rem; }
 
+/* ── Nav username as link ────────────────────────────────────────────────────── */
+a.nav-username { text-decoration: none; }
+a.nav-username:hover { color: var(--text); text-decoration: none; }
+
+/* ── Dashboard tabs ──────────────────────────────────────────────────────────── */
+.dash-tabs { display: flex; gap: 0.25rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab-btn {
+  background: transparent; border: none; cursor: pointer;
+  padding: 0.6rem 1.1rem; font-size: 0.9rem; font-weight: 600; font-family: var(--font);
+  color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent-light); border-bottom-color: var(--accent); }
+.tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+  padding: 1px 7px; margin-left: 0.35rem; color: var(--text-dim);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Dashboard row actions ───────────────────────────────────────────────────── */
+.row-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.btn-action-publish   { color: var(--success) !important; border-color: var(--success) !important; }
+.btn-action-publish:hover   { background: rgba(34,197,94,0.08) !important; }
+.btn-action-unpublish { color: var(--warning) !important; border-color: var(--warning) !important; }
+.btn-action-unpublish:hover { background: rgba(245,158,11,0.08) !important; }
+
+/* ── Modal action row ────────────────────────────────────────────────────────── */
+.modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .nav { gap: 1rem; }

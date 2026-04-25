@@ -156,12 +156,15 @@ router.get('/api/posts/:id', requireLogin, async (req, res) => {
 // ── API: create article ──────────────────────────────────────────────────────
 
 router.post('/api/posts', requireLogin, async (req, res) => {
-  const { title, content, categoryId } = req.body;
+  const { title, content, categoryId, draft } = req.body;
   const userId = req.session.user.id;
 
   if (!title?.trim() || !content?.trim() || !categoryId) {
     return res.status(400).json({ error: 'Title, content and category are required.' });
   }
+
+  const status     = draft ? 'draft'   : 'published';
+  const visibility = draft ? 'private' : 'public';
 
   const client = await pool.connect();
   try {
@@ -175,8 +178,8 @@ router.post('/api/posts', requireLogin, async (req, res) => {
         title.trim(),
         `${title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
         content.trim(),
-        'public',
-        'published',
+        visibility,
+        status,
         categoryId,
       ]
     );

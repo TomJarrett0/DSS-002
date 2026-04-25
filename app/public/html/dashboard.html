@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard — GameVault</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎮</span> GameVault
+      </a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">Forum</a>
+        <a href="/dashboard" class="nav-link active">My Posts</a>
+      </div>
+      <div class="nav-user">
+        <a href="/dashboard" class="nav-username" id="nav-username"></a>
+        <span class="badge-admin" id="nav-admin-badge" style="display:none">Admin</span>
+        <a href="/admin" class="btn btn-ghost btn-sm" id="nav-admin-link" style="display:none">Admin Panel</a>
+        <form method="POST" action="/logout" style="margin:0">
+          <button type="submit" class="btn btn-logout">Sign Out</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="page-header">
+      <h1 class="page-title">My Posts</h1>
+      <button class="btn btn-primary" id="new-post-btn">+ New Post</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="dash-tabs">
+      <button class="tab-btn active" data-tab="drafts">Drafts <span class="tab-count" id="drafts-count">0</span></button>
+      <button class="tab-btn" data-tab="published">Published <span class="tab-count" id="published-count">0</span></button>
+    </div>
+
+    <!-- Drafts tab -->
+    <div class="tab-panel active" id="tab-drafts">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Last Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="drafts-tbody">
+            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Published tab -->
+    <div class="tab-panel" id="tab-published">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Published</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="published-tbody">
+            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create / Edit modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">New Post</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form class="modal-form" id="post-form">
+        <input type="hidden" id="edit-post-id">
+        <div class="form-group">
+          <label for="post-title">Title</label>
+          <input type="text" id="post-title" placeholder="What's your post about?" maxlength="255" required>
+        </div>
+        <div class="form-group">
+          <label for="post-category">Category</label>
+          <select id="post-category" required>
+            <option value="">Select a category…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="post-body">Body</label>
+          <textarea id="post-body" placeholder="Write your post…" rows="8" required></textarea>
+        </div>
+        <div id="post-form-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="save-draft-btn">Save as Draft</button>
+          <button type="button" class="btn btn-primary"   id="publish-btn">Publish</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
