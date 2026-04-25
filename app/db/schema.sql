@@ -23,8 +23,17 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role          VARCHAR(10)  NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
 
-  -- Brute-force protection fields (see app/middleware/accountLockout.js)
+  -- Account state
+  subscription_status BOOLEAN DEFAULT false,
+  is_suspended        BOOLEAN DEFAULT false,
+
+  -- Two-factor authentication
+  twofa_enabled           BOOLEAN DEFAULT false,
+  twofa_secret_encrypted  TEXT,
+
+  -- Brute-force protection (see app/middleware/accountLockout.js)
   -- failed_login_attempts: incremented on each wrong password, reset on success.
   -- lockout_until: if set and in the future, all login attempts are rejected.
   failed_login_attempts INTEGER  NOT NULL DEFAULT 0,
