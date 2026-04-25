@@ -2,7 +2,9 @@ const express = require('express');
 const bcrypt  = require('bcrypt');
 const path    = require('path');
 const pool    = require('../db/pool');
-const { redirectIfLoggedIn } = require('../middleware/auth');
+const { redirectIfLoggedIn }                                     = require('../middleware/auth');
+const { checkAccountLockout, recordFailedAttempt, clearFailedAttempts } = require('../middleware/accountLockout');
+const logger  = require('../utils/logger');
 
 const router = express.Router();
 
@@ -57,18 +59,38 @@ if (!PEPPER) {
 const DUMMY_HASH = '$2b$12$invalidhashplaceholder.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 // ── Login ─────────────────────────────────────────────────────────────────────
+//
+// BRUTE-FORCE PROTECTION — TWO LAYERS:
+//
+//   Layer 1 (IP rate limit) is applied in app.js before this router.
+//   It blocks an IP that sends more than 10 failed requests in 15 minutes.
+//
+//   Layer 2 (account lockout) is the checkAccountLockout middleware below.
+//   It blocks further attempts on a specific account after 5 failures,
+//   regardless of which IP is used. This catches attackers rotating IPs.
+//
+//   Request flow:
+//     [app.js] loginRateLimiter (IP check)
+//       → [this route] checkAccountLockout (account check)
+//         → bcrypt comparison
+//           → fail: recordFailedAttempt() + log FAILED_LOGIN
+//           → pass: clearFailedAttempts() + log LOGIN_SUCCESS + redirect
+//
+// ─────────────────────────────────────────────────────────────────────────────
 
 router.get('/login', redirectIfLoggedIn, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/html/login.html'));
 });
 
-router.post('/login', redirectIfLoggedIn, async (req, res) => {
+// checkAccountLockout runs as route-level middleware before the handler.
+router.post('/login', redirectIfLoggedIn, checkAccountLockout, async (req, res) => {
   const { username, password } = req.body;
+  const trimmedUsername = username?.trim() ?? '';
 
   try {
     const result = await pool.query(
       'SELECT id, username, password_hash, role FROM users WHERE username = $1',
-      [username?.trim() ?? '']
+      [trimmedUsername]
     );
 
     const user = result.rows[0];
@@ -81,9 +103,19 @@ router.post('/login', redirectIfLoggedIn, async (req, res) => {
     const valid = await bcrypt.compare((password ?? '') + PEPPER, hashToCompare);
 
     if (!user || !valid) {
+      // Record the failure and log it. recordFailedAttempt handles the case
+      // where the username doesn't exist (the UPDATE simply matches 0 rows).
+      await recordFailedAttempt(trimmedUsername, req.ip);
+      logger.warn('FAILED_LOGIN', { username: trimmedUsername, ip: req.ip });
+
       // Generic message — same response whether username or password is wrong.
       return res.redirect('/login?error=invalid');
     }
+
+    // Successful login — reset the failure counter so the user starts clean.
+    // clearFailedAttempts also logs LOCKOUT_CLEARED if the account was locked.
+    await clearFailedAttempts(trimmedUsername, req.ip);
+    logger.info('LOGIN_SUCCESS', { username: trimmedUsername, ip: req.ip });
 
     // Regenerate the session ID on every successful login to prevent
     // session fixation attacks.

@@ -4,7 +4,9 @@ const express        = require('express');
 const session        = require('express-session');
 const pgSession      = require('connect-pg-simple')(session);
 const path           = require('path');
+const fs             = require('fs');
 const pool           = require('./db/pool');
+const loginRateLimiter = require('./middleware/rateLimiter');
 
 const authRoutes  = require('./routes/auth');
 const forumRoutes = require('./routes/forum');
@@ -12,6 +14,14 @@ const adminRoutes = require('./routes/admin');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// ── Ensure logs directory exists ──────────────────────────────────────────────
+// The security logger uses fs.appendFileSync which throws if the directory
+// is missing. We create it here at startup so a fresh clone works out of the box.
+const logsDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
 app.use(express.urlencoded({ extended: false }));
@@ -40,6 +50,12 @@ app.use(session({
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js',  express.static(path.join(__dirname, 'public/js')));
 app.use('/imgs', express.static(path.join(__dirname, 'public/imgs')));
+
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// Applied only to the login endpoint — not globally — so normal forum browsing
+// is unaffected. This is Layer 1 of brute-force protection (IP-based).
+// Layer 2 (account lockout) is inside app/middleware/accountLockout.js.
+app.use('/login', loginRateLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/',      authRoutes);
