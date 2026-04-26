@@ -2,9 +2,21 @@
  * requireLogin - protects any route that needs an authenticated user.
  * Redirects unauthenticated visitors to /login.
  */
-function requireLogin(req, res, next) {
+async function requireLogin(req, res, next) {
   if (!req.session.user) {
     return res.redirect('/login');
+  }
+  try {
+    const { rows } = await pool.query(
+      'SELECT is_suspended FROM users WHERE id = $1',
+      [req.session.user.id]
+    );
+    if (!rows.length || rows[0].is_suspended) {
+      return req.session.destroy(() => res.redirect('/login?error=suspended'));
+    }
+  } catch (err) {
+    console.error('requireLogin suspension check error:', err);
+    return res.status(500).send('Server error.');
   }
   next();
 }

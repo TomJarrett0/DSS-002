@@ -89,7 +89,7 @@ router.post('/login', redirectIfLoggedIn, checkAccountLockout, async (req, res) 
 
   try {
     const result = await pool.query(
-      'SELECT id, username, password_hash, role FROM users WHERE username = $1',
+      'SELECT id, username, password_hash, role, is_suspended FROM users WHERE username = $1',
       [trimmedUsername]
     );
 
@@ -110,6 +110,11 @@ router.post('/login', redirectIfLoggedIn, checkAccountLockout, async (req, res) 
 
       // Generic message — same response whether username or password is wrong.
       return res.redirect('/login?error=invalid');
+    }
+
+    // Block suspended accounts even with valid credentials.
+    if (user.is_suspended) {
+      return res.redirect('/login?error=suspended');
     }
 
     // Successful login — reset the failure counter so the user starts clean.

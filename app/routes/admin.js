@@ -1,7 +1,10 @@
 const express = require('express');
+const bcrypt  = require('bcrypt');
 const path    = require('path');
 const pool    = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
+
+const PEPPER = process.env.PASSWORD_PEPPER;
 
 const router = express.Router();
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -46,7 +49,7 @@ router.get('/api/stats', requireAdmin, async (req, res) => {
 router.get('/api/users', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, username, email, role, created_at
+      SELECT id, username, email, role, is_suspended, created_at
       FROM users
       ORDER BY created_at DESC
     `);
@@ -63,14 +66,31 @@ router.patch('/api/users/:id/role', requireAdmin, async (req, res) => {
   const targetId = req.params.id;
   if (!isUuid(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
 
-  const { role } = req.body;
+  const { role, confirmPassword } = req.body;
   if (!['user', 'admin'].includes(role)) {
     return res.status(400).json({ error: 'Role must be "user" or "admin".' });
   }
 
-  // Prevent an admin from demoting themselves
   if (targetId === req.session.user.id && role !== 'admin') {
     return res.status(400).json({ error: 'You cannot change your own role.' });
+  }
+
+  // Re-authenticate the admin before making role changes
+  if (!confirmPassword) {
+    return res.status(400).json({ error: 'Your password is required to change roles.' });
+  }
+  try {
+    const adminRow = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [req.session.user.id]
+    );
+    const valid = await bcrypt.compare(confirmPassword + PEPPER, adminRow.rows[0].password_hash);
+    if (!valid) {
+      return res.status(403).json({ error: 'Incorrect password.' });
+    }
+  } catch (err) {
+    console.error('Re-auth error in PATCH role:', err);
+    return res.status(500).json({ error: 'Server error during re-authentication.' });
   }
 
   try {
@@ -85,6 +105,64 @@ router.patch('/api/users/:id/role', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('PATCH /admin/api/users/:id/role error:', err);
     res.status(500).json({ error: 'Failed to update role.' });
+  }
+});
+
+// ── API: suspend / reactivate a user ──────────────────────────────────────────
+
+router.patch('/api/users/:id/suspension', requireAdmin, async (req, res) => {
+  const targetId = req.params.id;
+  if (!isUuid(targetId)) return res.status(400).json({ error: 'Invalid user ID.' });
+
+  if (targetId === req.session.user.id) {
+    return res.status(400).json({ error: 'You cannot suspend your own account.' });
+  }
+
+  const { suspended, confirmPassword } = req.body;
+  if (typeof suspended !== 'boolean') {
+    return res.status(400).json({ error: '"suspended" must be a boolean.' });
+  }
+
+  if (!confirmPassword) {
+    return res.status(400).json({ error: 'Your password is required to change suspension status.' });
+  }
+
+  // Re-authenticate
+  try {
+    const adminRow = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [req.session.user.id]
+    );
+    const valid = await bcrypt.compare(confirmPassword + PEPPER, adminRow.rows[0].password_hash);
+    if (!valid) {
+      return res.status(403).json({ error: 'Incorrect password.' });
+    }
+  } catch (err) {
+    console.error('Re-auth error in PATCH suspension:', err);
+    return res.status(500).json({ error: 'Server error during re-authentication.' });
+  }
+
+  try {
+    // Fetch target user to check role
+    const targetRow = await pool.query(
+      'SELECT role FROM users WHERE id = $1',
+      [targetId]
+    );
+    if (!targetRow.rows.length) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    if (targetRow.rows[0].role === 'admin') {
+      return res.status(400).json({ error: 'Cannot suspend an admin. Demote them first.' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET is_suspended = $1 WHERE id = $2 RETURNING id, username, is_suspended',
+      [suspended, targetId]
+    );
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error('PATCH /admin/api/users/:id/suspension error:', err);
+    res.status(500).json({ error: 'Failed to update suspension status.' });
   }
 });
 

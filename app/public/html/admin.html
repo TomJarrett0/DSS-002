@@ -61,12 +61,13 @@
                   <th>Username</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th>Joined</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="users-tbody">
-                <tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+                <tr><td colspan="6" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -122,6 +123,23 @@
       </div>
     </div>
   </main>
+
+  <!-- Password confirmation modal for sensitive admin actions -->
+  <div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:0.75rem;padding:2rem;width:100%;max-width:420px;display:flex;flex-direction:column;gap:1rem">
+      <h3 id="confirm-modal-title" style="margin:0;font-size:1.1rem"></h3>
+      <p id="confirm-modal-message" style="margin:0;color:var(--text-muted,#aaa);font-size:0.9rem"></p>
+      <div class="form-group">
+        <label for="confirm-modal-password">Your password</label>
+        <input type="password" id="confirm-modal-password" placeholder="Enter your password to confirm" autocomplete="current-password">
+      </div>
+      <div id="confirm-modal-error" style="color:var(--danger,#e55);font-size:0.875rem"></div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+        <button id="confirm-modal-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="confirm-modal-submit" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/js/admin.js"></script>
 </body>

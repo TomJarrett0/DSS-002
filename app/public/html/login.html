@@ -85,10 +85,16 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    if (params.get('error')) {
+    const errorCode = params.get('error');
+    if (errorCode) {
+      const messages = {
+        invalid:   'Invalid username or password. Please try again.',
+        locked:    'Account temporarily locked due to too many failed attempts. Try again later.',
+        suspended: 'Your account has been suspended. Please contact an administrator.',
+      };
       const div = document.createElement('div');
       div.className = 'login-alert';
-      div.textContent = 'Invalid username or password. Please try again.';
+      div.textContent = messages[errorCode] || 'Something went wrong. Please try again.';
       document.getElementById('alert-box').appendChild(div);
     }
   </script>
