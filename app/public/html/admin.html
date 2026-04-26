@@ -10,7 +10,7 @@
   <header class="site-header">
     <nav class="nav">
       <a href="/" class="nav-logo">
-        <span class="logo-icon">🎮</span> GameVault
+        GameVault
       </a>
       <div class="nav-links">
         <a href="/" class="nav-link">Forum</a>
@@ -36,9 +36,9 @@
       <!-- Sidebar navigation -->
       <aside class="admin-sidebar">
         <div class="admin-sidebar-header">Management</div>
-        <a class="admin-nav-item active" data-section="overview">📊 Overview</a>
-        <a class="admin-nav-item" data-section="users">👥 Users</a>
-        <a class="admin-nav-item" data-section="categories">📂 Categories</a>
+        <a class="admin-nav-item active" data-section="overview">Overview</a>
+        <a class="admin-nav-item" data-section="users">Users</a>
+        <a class="admin-nav-item" data-section="categories">Categories</a>
       </aside>
 
       <div class="admin-content">
@@ -88,15 +88,9 @@
                   <input type="text" id="cat-slug" placeholder="url-friendly-slug" required>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:80px 1fr;gap:0.75rem">
-                <div class="form-group">
-                  <label for="cat-icon">Icon</label>
-                  <input type="text" id="cat-icon" placeholder="🎮" maxlength="4">
-                </div>
-                <div class="form-group">
-                  <label for="cat-desc">Description</label>
-                  <input type="text" id="cat-desc" placeholder="Short description" required>
-                </div>
+              <div class="form-group">
+                <label for="cat-desc">Description</label>
+                <input type="text" id="cat-desc" placeholder="Short description" required>
               </div>
               <div id="cat-form-error"></div>
               <button type="submit" class="btn btn-primary" style="align-self:flex-start">Add Category</button>
@@ -107,7 +101,6 @@
             <table>
               <thead>
                 <tr>
-                  <th>Icon</th>
                   <th>Name</th>
                   <th>Slug</th>
                   <th>Description</th>
@@ -115,7 +108,7 @@
                 </tr>
               </thead>
               <tbody id="categories-tbody">
-                <tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
+                <tr><td colspan="4" class="text-muted" style="text-align:center;padding:2rem">Loading…</td></tr>
               </tbody>
             </table>
           </div>

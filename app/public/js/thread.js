@@ -160,7 +160,7 @@ async function loadArticle() {
     empty.className = 'empty-state';
     const icon = document.createElement('div');
     icon.className = 'empty-icon';
-    icon.textContent = '💬';
+    icon.textContent = '';
     const message = document.createElement('p');
     message.textContent = 'No comments yet. Be the first to respond.';
     empty.append(icon, message);

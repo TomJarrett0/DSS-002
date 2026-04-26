@@ -32,10 +32,6 @@ function buildCategoryCard(cat) {
   a.className = 'category-card';
   a.href      = `/category/${cat.slug}`;
 
-  const icon = document.createElement('div');
-  icon.className   = 'cat-icon';
-  icon.textContent = cat.icon;
-
   const body = document.createElement('div');
   body.className = 'cat-body';
 
@@ -51,17 +47,17 @@ function buildCategoryCard(cat) {
   meta.className = 'cat-meta';
 
   const articleStat = document.createElement('span');
-  articleStat.textContent = `📝 ${cat.post_count} posts`;
+  articleStat.textContent = `${cat.post_count} posts`;
 
   const commentStat = document.createElement('span');
-  commentStat.textContent = `💬 ${cat.comment_count} comments`;
+  commentStat.textContent = `${cat.comment_count} comments`;
 
   const activity = document.createElement('span');
-  activity.textContent = `🕐 ${formatRelative(cat.last_activity)}`;
+  activity.textContent = formatRelative(cat.last_activity);
 
   meta.append(articleStat, commentStat, activity);
   body.append(name, desc, meta);
-  a.append(icon, body);
+  a.append(body);
   return a;
 }
 
@@ -82,7 +78,7 @@ async function loadCategories() {
     empty.className = 'empty-state';
     const icon = document.createElement('div');
     icon.className   = 'empty-icon';
-    icon.textContent = '📭';
+    icon.textContent = '';
     const p = document.createElement('p');
     p.textContent = 'No categories yet. Ask an admin to set some up.';
     empty.append(icon, p);

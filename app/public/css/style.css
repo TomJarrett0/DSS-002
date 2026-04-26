@@ -72,7 +72,6 @@ a:hover { color: var(--text); text-decoration: underline; }
   text-decoration: none;
 }
 .nav-logo:hover { text-decoration: none; color: var(--text); }
-.nav-logo .logo-icon { font-size: 1.5rem; }
 .nav-links { display: flex; align-items: center; gap: 0.25rem; flex: 1; }
 .nav-link {
   padding: 0.4rem 0.75rem; border-radius: var(--radius-sm);
@@ -187,18 +186,13 @@ select option { background: var(--bg-card); }
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 1.4rem; cursor: pointer;
   transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
-  display: flex; gap: 1rem; align-items: flex-start;
+  display: block;
   text-decoration: none; color: inherit;
 }
 .category-card:hover {
   border-color: var(--border-focus); background: var(--bg-card-hover);
   transform: translateY(-2px); box-shadow: var(--shadow-sm);
   text-decoration: none; color: inherit;
-}
-.cat-icon {
-  font-size: 2rem; line-height: 1; width: 48px; height: 48px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); flex-shrink: 0;
 }
 .cat-body { flex: 1; min-width: 0; }
 .cat-name  { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; color: var(--text); }
@@ -322,7 +316,6 @@ tbody tr:hover td { background: var(--bg-card-hover); }
 .spinner::before { content: ''; width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--text-muted); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
-.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
 .empty-state p { font-size: 0.9rem; }
 
 /* ── Nav username as link ────────────────────────────────────────────────────── */

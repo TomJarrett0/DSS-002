@@ -92,7 +92,7 @@ async function loadCategory() {
     empty.className = 'empty-state';
     const icon = document.createElement('div');
     icon.className   = 'empty-icon';
-    icon.textContent = '💬';
+    icon.textContent = '';
     const p = document.createElement('p');
     p.textContent = 'No posts yet. Be the first to publish one!';
     empty.append(icon, p);

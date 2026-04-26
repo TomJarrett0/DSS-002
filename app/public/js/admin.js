@@ -220,10 +220,6 @@ async function loadAdminCategories() {
   categories.forEach(cat => {
     const tr = document.createElement('tr');
 
-    const tdIcon = document.createElement('td');
-    tdIcon.textContent = cat.icon;
-    tdIcon.style.fontSize = '1.4rem';
-
     const tdName = document.createElement('td');
     tdName.textContent  = cat.name;
     tdName.style.fontWeight = '600';
@@ -253,7 +249,7 @@ async function loadAdminCategories() {
     });
     tdActions.appendChild(delBtn);
 
-    tr.append(tdIcon, tdName, tdSlug, tdDesc, tdActions);
+    tr.append(tdName, tdSlug, tdDesc, tdActions);
     tbody.appendChild(tr);
   });
 }
@@ -266,13 +262,12 @@ document.getElementById('add-category-form').addEventListener('submit', async (e
 
   const name = document.getElementById('cat-name').value.trim();
   const slug = document.getElementById('cat-slug').value.trim();
-  const icon = document.getElementById('cat-icon').value.trim() || '🎮';
   const desc = document.getElementById('cat-desc').value.trim();
 
   const res = await fetch('/admin/api/categories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, slug, icon, description: desc }),
+    body: JSON.stringify({ name, slug, description: desc }),
   });
 
   if (!res.ok) {
